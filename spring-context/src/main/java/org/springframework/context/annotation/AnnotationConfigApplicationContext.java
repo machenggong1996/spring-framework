@@ -84,6 +84,7 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 */
 	public AnnotationConfigApplicationContext(Class<?>... annotatedClasses) {
 		this();
+		//注册bean key为bean name value为BeanDefinition
 		register(annotatedClasses);
 		//主要spring执行方法
 		refresh();
