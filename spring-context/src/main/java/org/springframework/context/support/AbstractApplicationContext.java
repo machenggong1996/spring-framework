@@ -550,9 +550,13 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 			try {
 				// Allows post-processing of the bean factory in context subclasses.
+				// 空实现
 				postProcessBeanFactory(beanFactory);
 
 				// Invoke factory processors registered as beans in the context.
+				// 重点
+				//本方法会实例化和调用所有 BeanFactoryPostProcessor（包括其子类 BeanDefinitionRegistryPostProcessor）
+
 				invokeBeanFactoryPostProcessors(beanFactory);
 
 				// Register bean processors that intercept bean creation.
@@ -642,7 +646,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void initPropertySources() {
 		// For subclasses: do nothing by default.
-		System.out.println("什么都不做 默认实现");
+		System.out.println("initPropertySources 空实现");
 	}
 
 	/**
@@ -729,6 +733,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * @param beanFactory the bean factory used by the application context
 	 */
 	protected void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
+		System.out.println("postProcessBeanFactory 空实现");
 	}
 
 	/**
