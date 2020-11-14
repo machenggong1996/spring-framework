@@ -149,7 +149,7 @@ final class PostProcessorRegistrationDelegate {
 
 		// Do not initialize FactoryBeans here: We need to leave all regular beans
 		// uninitialized to let the bean factory post-processors apply to them!
-		//获取BeanFactoryPostProcessor实现类bean的名称（后置处理器）
+		//获取BeanFactoryPostProcessor实现类bean的名称（后置处理器）自定义的也会在这里出现
 		String[] postProcessorNames = beanFactory.getBeanNamesForType(BeanFactoryPostProcessor.class, true, false);
 
 		// Separate between BeanFactoryPostProcessors that implement PriorityOrdered,
@@ -292,6 +292,7 @@ final class PostProcessorRegistrationDelegate {
 	private static void invokeBeanFactoryPostProcessors(Collection<? extends BeanFactoryPostProcessor> postProcessors,
 	                                                    ConfigurableListableBeanFactory beanFactory) {
 
+		//循环调用BeanFactoryPostProcessor的postProcessBeanFactory方法 通过多态实现
 		for (BeanFactoryPostProcessor postProcessor : postProcessors) {
 			postProcessor.postProcessBeanFactory(beanFactory);
 		}
