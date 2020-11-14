@@ -542,6 +542,17 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			prepareRefresh();
 
 			// Tell the subclass to refresh the internal bean factory.
+			/**
+			 * 该方法会解析所有 Spring 配置文件（通常我们会放在 resources 目录下），将所有 Spring 配置文件中的 bean 定义封装成 BeanDefinition，加载到 BeanFactory
+			 * 中。常见的，如果解析到<context:component-scan base-package="" /> 注解时，会扫描 base-package
+			 * 指定的目录，将该目录下使用指定注解（@Controller、@Service、@Component、@Repository）的 bean 定义也同样封装成 BeanDefinition，加载到
+			 * BeanFactory 中。
+			 * 上面提到的 “加载到 BeanFactory 中” 的内容主要指的是添加到以下3个缓存：
+			 *
+			 * beanDefinitionNames缓存：所有被加载到 BeanFactory 中的 bean 的 beanName 集合。
+			 * beanDefinitionMap缓存：所有被加载到 BeanFactory 中的 bean 的 beanName 和 BeanDefinition 映射。
+			 * aliasMap缓存：所有被加载到 BeanFactory 中的 bean 的 beanName 和别名映射。
+			 */
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
 			// Prepare the bean factory for use in this context.
@@ -559,6 +570,18 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				invokeBeanFactoryPostProcessors(beanFactory);
 
 				// Register bean processors that intercept bean creation.
+				// 注册BeanPostProcessor
+				/**
+				 * 1.整个 registerBeanPostProcessors 方法围绕 BeanPostProcessor 接口展开，和 invokeBeanFactoryPostProcessors
+				 * 不同的是，invokeBeanFactoryPostProcessors 方法会直接调用 BeanFactoryPostProcessor 实现类的方法，而
+				 * registerBeanPostProcessors 方法只是将 BeanPostProcessor 实现类注册到 BeanFactory 的 beanPostProcessors
+				 * 缓存中。这是因为，此时还未到 BeanPostProcessor 实现类“出场的时候”。
+				 *
+				 * 2.BeanPostProcessor 实现类具体的 “出场时机” 在创建 bean 实例时，执行初始化方法前后。postProcessBeforeInitialization
+				 * 方法在执行初始化方法前被调用，postProcessAfterInitialization 方法在执行初始化方法后被调用。
+				 *
+				 * 3.BeanPostProcessor 实现类和 BeanFactoryPostProcessor 实现类一样，也可以通过实现 PriorityOrdered、Ordered 接口来调整自己的优先级。
+				 */
 				registerBeanPostProcessors(beanFactory);
 
 				// Initialize message source for this context.
