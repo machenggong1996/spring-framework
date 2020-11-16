@@ -765,6 +765,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				else {
 					// 6.如果beanName对应的bean不是FactoryBean，只是普通Bean，通过beanName获取bean实例
 					// 这一步起始方法内将Bean放入 Bean的Map缓存 DefaultSingletonBeanRegistry#singletonObjects
+					//getSingleton调用
 					getBean(beanName);
 				}
 			}
