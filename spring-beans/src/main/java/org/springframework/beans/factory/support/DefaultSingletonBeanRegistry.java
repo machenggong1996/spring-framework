@@ -93,6 +93,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 
 	/**
 	 * Names of beans that are currently in creation
+	 * 正在创建singletons bean集合
 	 */
 	private final Set<String> singletonsCurrentlyInCreation = Collections.newSetFromMap(new ConcurrentHashMap<>(16));
 
@@ -157,9 +158,13 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	 */
 	protected void addSingleton(String beanName, Object singletonObject) {
 		synchronized (this.singletonObjects) {
+			// 1.添加到单例对象缓存
 			this.singletonObjects.put(beanName, singletonObject);
+			// 2.将单例工厂缓存移除（已经不需要）
 			this.singletonFactories.remove(beanName);
+			// 3.将早期单例对象缓存移除（已经不需要）
 			this.earlySingletonObjects.remove(beanName);
+			// 4.添加到已经注册的单例对象缓存
 			this.registeredSingletons.add(beanName);
 		}
 	}
@@ -242,10 +247,14 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	 */
 	public Object getSingleton(String beanName, ObjectFactory<?> singletonFactory) {
 		Assert.notNull(beanName, "Bean name must not be null");
+		// 1.加锁，避免重复创建单例对象
 		synchronized (this.singletonObjects) {
+			// 2.首先检查beanName对应的bean实例是否在缓存中存在，如果已经存在，则直接返回
 			Object singletonObject = this.singletonObjects.get(beanName);
 			if (singletonObject == null) {
+				// 3.beanName对应的bean实例不存在于缓存中，则进行Bean的创建
 				if (this.singletonsCurrentlyInDestruction) {
+					// 4.当bean工厂的单例处于destruction状态时，不允许进行单例bean创建，抛出异常
 					throw new BeanCreationNotAllowedException(beanName,
 					                                          "Singleton bean creation not allowed while singletons of"
 							                                          + " this factory are in destruction "
@@ -255,14 +264,18 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 				if (logger.isDebugEnabled()) {
 					logger.debug("Creating shared instance of singleton bean '" + beanName + "'");
 				}
+				// 5.创建单例前的操作
 				beforeSingletonCreation(beanName);
 				boolean newSingleton = false;
+				// suppressedExceptions用于记录异常相关信息
 				boolean recordSuppressedExceptions = (this.suppressedExceptions == null);
 				if (recordSuppressedExceptions) {
 					this.suppressedExceptions = new LinkedHashSet<>();
 				}
 				try {
+					// 6.执行singletonFactory的getObject方法获取bean实例
 					singletonObject = singletonFactory.getObject();
+					// 标记为新的单例对象
 					newSingleton = true;
 				} catch (IllegalStateException ex) {
 					// Has the singleton object implicitly appeared in the meantime ->
@@ -282,13 +295,16 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 					if (recordSuppressedExceptions) {
 						this.suppressedExceptions = null;
 					}
+					// 7.创建单例后的操作
 					afterSingletonCreation(beanName);
 				}
 				if (newSingleton) {
 					// 将Bean对象放入缓存
+					// 8.如果是新的单例对象，将beanName和对应的bean实例添加到缓存中（singletonObjects、registeredSingletons）
 					addSingleton(beanName, singletonObject);
 				}
 			}
+			// 9.返回创建出来的单例对象
 			return singletonObject;
 		}
 	}
@@ -378,6 +394,8 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	 * @see #isSingletonCurrentlyInCreation
 	 */
 	protected void beforeSingletonCreation(String beanName) {
+		// 先校验beanName是否为要在创建检查排除掉的（inCreationCheckExclusions缓存），如果不是，
+		// 则将beanName加入到正在创建bean的缓存中（Set），如果beanName已经存在于该缓存，会返回false抛出异常（这种情况出现在构造器的循环依赖
 		if (!this.inCreationCheckExclusions.contains(beanName) && !this.singletonsCurrentlyInCreation.add(beanName)) {
 			throw new BeanCurrentlyInCreationException(beanName);
 		}
@@ -391,6 +409,8 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	 * @see #isSingletonCurrentlyInCreation
 	 */
 	protected void afterSingletonCreation(String beanName) {
+		// 先校验beanName是否为要在创建检查排除掉的（inCreationCheckExclusions缓存），如果不是，
+		// 则将beanName从正在创建bean的缓存中（Set）移除，如果beanName不存在于该缓存，会返回false抛出异常
 		if (!this.inCreationCheckExclusions.contains(beanName) && !this.singletonsCurrentlyInCreation
 				.remove(beanName)) {
 			throw new IllegalStateException("Singleton '" + beanName + "' isn't currently in creation");

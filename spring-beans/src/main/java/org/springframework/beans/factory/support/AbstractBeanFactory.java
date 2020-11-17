@@ -330,6 +330,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					//创建Bean
 					// 9.针对不同的scope进行bean的创建
 					// 9.1 scope为singleton的bean创建（新建了一个ObjectFactory，并且重写了getObject方法）
+					// getSingleton调用
 					sharedInstance = getSingleton(beanName, () -> {
 						try {
 							// 9.1.1 创建Bean实例
