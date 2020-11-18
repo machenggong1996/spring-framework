@@ -110,51 +110,74 @@ class ConstructorResolver {
 	 */
 	public BeanWrapper autowireConstructor(String beanName, RootBeanDefinition mbd,
 			@Nullable Constructor<?>[] chosenCtors, @Nullable Object[] explicitArgs) {
-
+		// 定义bean包装类
 		BeanWrapperImpl bw = new BeanWrapperImpl();
 		this.beanFactory.initBeanWrapper(bw);
 
+		// 最终用于实例化的构造函数
 		Constructor<?> constructorToUse = null;
+		// 最终用于实例化的参数Holder
 		ArgumentsHolder argsHolderToUse = null;
+		// 最终用于实例化的构造函数参数
 		Object[] argsToUse = null;
-
+		// 1.解析出要用于实例化的构造函数参数
 		if (explicitArgs != null) {
 			argsToUse = explicitArgs;
 		}
 		else {
+			// 1.2 尝试从缓存中获取已经解析过的构造函数参数
 			Object[] argsToResolve = null;
 			synchronized (mbd.constructorArgumentLock) {
+				// 1.2.1 拿到缓存中已解析的构造函数或工厂方法
 				constructorToUse = (Constructor<?>) mbd.resolvedConstructorOrFactoryMethod;
+				// 1.2.2 如果constructorToUse不为空 && mbd标记了构造函数参数已解析
 				if (constructorToUse != null && mbd.constructorArgumentsResolved) {
 					// Found a cached constructor...
+					// 1.2.3 从缓存中获取已解析的构造函数参数
 					argsToUse = mbd.resolvedConstructorArguments;
 					if (argsToUse == null) {
+						// 1.2.4 如果resolvedConstructorArguments为空，则从缓存中获取准备用于解析的构造函数参数，
+						// constructorArgumentsResolved为true时，resolvedConstructorArguments和
+						// preparedConstructorArguments必然有一个缓存了构造函数的参数
 						argsToResolve = mbd.preparedConstructorArguments;
 					}
 				}
 			}
 			if (argsToResolve != null) {
+				// 1.2.5 如果argsToResolve不为空，则对构造函数参数进行解析，
+				// 如给定方法的构造函数 A(int,int)则通过此方法后就会把配置中的("1","1")转换为(1,1)
 				argsToUse = resolvePreparedArguments(beanName, mbd, bw, constructorToUse, argsToResolve);
 			}
 		}
-
+		// 2.如果构造函数没有被缓存，则通过配置文件获取
 		if (constructorToUse == null) {
 			// Need to resolve the constructor.
+			// 2.1 检查是否需要自动装配：chosenCtors不为空 || autowireMode为AUTOWIRE_CONSTRUCTOR
+			// 例子：当chosenCtors不为空时，代表有构造函数通过@Autowire修饰，因此需要自动装配
 			boolean autowiring = (chosenCtors != null ||
 					mbd.getResolvedAutowireMode() == AutowireCapableBeanFactory.AUTOWIRE_CONSTRUCTOR);
 			ConstructorArgumentValues resolvedValues = null;
 
+			// 构造函数参数个数
 			int minNrOfArgs;
 			if (explicitArgs != null) {
+				// 2.2 explicitArgs不为空，则使用explicitArgs的length作为minNrOfArgs的值
 				minNrOfArgs = explicitArgs.length;
 			}
 			else {
+				// 2.3 获得mbd的构造函数的参数值（indexedArgumentValues：带index的参数值；genericArgumentValues：通用的参数值）
 				ConstructorArgumentValues cargs = mbd.getConstructorArgumentValues();
+				// 2.4 创建ConstructorArgumentValues对象resolvedValues，用于承载解析后的构造函数参数的值
 				resolvedValues = new ConstructorArgumentValues();
+				// 2.5 解析mbd的构造函数的参数，并返回参数个数
 				minNrOfArgs = resolveConstructorArguments(beanName, mbd, bw, cargs, resolvedValues);
+				// 注：这边解析mbd中的构造函数参数值，主要是处理我们通过xml方式定义的构造函数注入的参数，
+				// 但是如果我们是通过@Autowire注解直接修饰构造函数，则mbd是没有这些参数值的
 			}
 
+			// 3.确认构造函数的候选者
 			// Take specified constructors, if any.
+			// 3.1 如果入参chosenCtors不为空，则将chosenCtors的构造函数作为候选者
 			Constructor<?>[] candidates = chosenCtors;
 			if (candidates == null) {
 				Class<?> beanClass = mbd.getBeanClass();

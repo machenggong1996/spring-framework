@@ -1099,9 +1099,11 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 */
 	protected BeanWrapper createBeanInstance(String beanName, RootBeanDefinition mbd, @Nullable Object[] args) {
 		// Make sure bean class is actually resolved at this point.
+		// 解析bean的类型信息
 		Class<?> beanClass = resolveBeanClass(mbd, beanName);
 
 		if (beanClass != null && !Modifier.isPublic(beanClass.getModifiers()) && !mbd.isNonPublicAccessAllowed()) {
+			// beanClass不为空 && beanClass不是公开类（不是public修饰） && 该bean不允许访问非公共构造函数和方法，则抛异常
 			throw new BeanCreationException(mbd.getResourceDescription(), beanName,
 			                                "Bean class isn't public, and non-public access not allowed: " + beanClass
 					                                .getName());
@@ -1111,38 +1113,49 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		if (instanceSupplier != null) {
 			return obtainFromSupplier(instanceSupplier, beanName);
 		}
-
+		// 1.如果存在工厂方法则使用工厂方法实例化bean对象
 		if (mbd.getFactoryMethodName() != null) {
 			return instantiateUsingFactoryMethod(beanName, mbd, args);
 		}
 
 		// Shortcut when re-creating the same bean...
+		// resolved: 构造函数或工厂方法是否已经解析过
 		boolean resolved = false;
+		// autowireNecessary: 是否需要自动注入（即是否需要解析构造函数参数）
 		boolean autowireNecessary = false;
 		if (args == null) {
+			// 2.加锁
 			synchronized (mbd.constructorArgumentLock) {
 				if (mbd.resolvedConstructorOrFactoryMethod != null) {
+					// 2.1 如果resolvedConstructorOrFactoryMethod缓存不为空，则将resolved标记为已解析
 					resolved = true;
+					// 2.2 根据constructorArgumentsResolved判断是否需要自动注入
 					autowireNecessary = mbd.constructorArgumentsResolved;
 				}
 			}
 		}
 		if (resolved) {
+			// 3.如果已经解析过，则使用resolvedConstructorOrFactoryMethod缓存里解析好的构造函数方法
 			if (autowireNecessary) {
+				// 3.1 需要自动注入，则执行构造函数自动注入
 				return autowireConstructor(beanName, mbd, null, null);
 			} else {
+				// 3.2 否则使用默认的构造函数进行bean的实例化
 				return instantiateBean(beanName, mbd);
 			}
 		}
 
 		// Candidate constructors for autowiring?
+		// 4.应用后置处理器SmartInstantiationAwareBeanPostProcessor，拿到bean的候选构造函数
 		Constructor<?>[] ctors = determineConstructorsFromBeanPostProcessors(beanClass, beanName);
 		if (ctors != null || mbd.getResolvedAutowireMode() == AUTOWIRE_CONSTRUCTOR || mbd.hasConstructorArgumentValues()
 				|| !ObjectUtils.isEmpty(args)) {
+			// 5.如果ctors不为空 || mbd的注入方式为AUTOWIRE_CONSTRUCTOR || mdb定义了构造函数的参数值 || args不为空，则执行构造函数自动注入
 			return autowireConstructor(beanName, mbd, ctors, args);
 		}
 
 		// No special handling: simply use no-arg constructor.
+		// 6.没有特殊处理，则使用默认的构造函数进行bean的实例化
 		return instantiateBean(beanName, mbd);
 	}
 
@@ -1207,17 +1220,25 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 * @return the candidate constructors, or {@code null} if none specified
 	 * @throws org.springframework.beans.BeansException in case of errors
 	 * @see org.springframework.beans.factory.config.SmartInstantiationAwareBeanPostProcessor#determineCandidateConstructors
+	 * 调用 SmartInstantiationAwareBeanPostProcessor 的 determineCandidateConstructors 方法，
+	 * 该方法可以返回要用于 beanClass 的候选构造函数。使用 @Autowire 注解修饰构造函数，
+	 * 则该构造函数在这边会被 AutowiredAnnotationBeanPostProcessor 找到
 	 */
 	@Nullable
 	protected Constructor<?>[] determineConstructorsFromBeanPostProcessors(@Nullable Class<?> beanClass,
 	                                                                       String beanName) throws BeansException {
 
 		if (beanClass != null && hasInstantiationAwareBeanPostProcessors()) {
+			// 1.遍历所有的BeanPostProcessor
 			for (BeanPostProcessor bp : getBeanPostProcessors()) {
+				// 2.调用SmartInstantiationAwareBeanPostProcessor的determineCandidateConstructors方法，
+				// 该方法可以返回要用于beanClass的候选构造函数
+				// 例如：使用@Autowire注解修饰构造函数，则该构造函数在这边会被AutowiredAnnotationBeanPostProcessor找到
 				if (bp instanceof SmartInstantiationAwareBeanPostProcessor) {
 					SmartInstantiationAwareBeanPostProcessor ibp = (SmartInstantiationAwareBeanPostProcessor) bp;
 					Constructor<?>[] ctors = ibp.determineCandidateConstructors(beanClass, beanName);
 					if (ctors != null) {
+						// 3.如果ctors不为空，则不再继续执行其他的SmartInstantiationAwareBeanPostProcessor
 						return ctors;
 					}
 				}
