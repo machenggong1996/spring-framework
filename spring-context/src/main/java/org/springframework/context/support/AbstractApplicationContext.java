@@ -876,15 +876,19 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void initLifecycleProcessor() {
 		ConfigurableListableBeanFactory beanFactory = getBeanFactory();
+		// 1.判断BeanFactory是否已经存在生命周期处理器（固定使用beanName=lifecycleProcessor）
 		if (beanFactory.containsLocalBean(LIFECYCLE_PROCESSOR_BEAN_NAME)) {
+			// 1.1 如果已经存在，则将该bean赋值给lifecycleProcessor
 			this.lifecycleProcessor = beanFactory.getBean(LIFECYCLE_PROCESSOR_BEAN_NAME, LifecycleProcessor.class);
 			if (logger.isDebugEnabled()) {
 				logger.debug("Using LifecycleProcessor [" + this.lifecycleProcessor + "]");
 			}
 		} else {
+			// 1.2 如果不存在，则使用DefaultLifecycleProcessor
 			DefaultLifecycleProcessor defaultProcessor = new DefaultLifecycleProcessor();
 			defaultProcessor.setBeanFactory(beanFactory);
 			this.lifecycleProcessor = defaultProcessor;
+			// 并将DefaultLifecycleProcessor作为默认的生命周期处理器，注册到BeanFactory中
 			beanFactory.registerSingleton(LIFECYCLE_PROCESSOR_BEAN_NAME, this.lifecycleProcessor);
 			if (logger.isDebugEnabled()) {
 				logger.debug("Unable to locate LifecycleProcessor with name '" + LIFECYCLE_PROCESSOR_BEAN_NAME
@@ -995,12 +999,15 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		clearResourceCaches();
 
 		// Initialize lifecycle processor for this context.
+		// 1.为此上下文初始化生命周期处理器
 		initLifecycleProcessor();
 
 		// Propagate refresh to lifecycle processor first.
+		// 2.首先将刷新完毕事件传播到生命周期处理器（触发isAutoStartup方法返回true的SmartLifecycle的start方法）
 		getLifecycleProcessor().onRefresh();
 
 		// Publish the final event.
+		// 3.推送上下文刷新完毕事件到相应的监听器
 		publishEvent(new ContextRefreshedEvent(this));
 
 		// Participate in LiveBeansView MBean, if active.
