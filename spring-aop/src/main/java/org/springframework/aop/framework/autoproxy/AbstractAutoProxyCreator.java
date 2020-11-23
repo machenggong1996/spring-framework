@@ -251,7 +251,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	@Override
 	public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName) throws BeansException {
 		Object cacheKey = getCacheKey(beanClass, beanName);
-
+		//Aop动态代理
 		if (!StringUtils.hasLength(beanName) || !this.targetSourcedBeans.contains(beanName)) {
 			if (this.advisedBeans.containsKey(cacheKey)) {
 				return null;
@@ -271,6 +271,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 				this.targetSourcedBeans.add(beanName);
 			}
 			Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(beanClass, beanName, targetSource);
+			//创建代理
 			Object proxy = createProxy(beanClass, beanName, specificInterceptors, targetSource);
 			this.proxyTypes.put(cacheKey, proxy.getClass());
 			return proxy;
@@ -452,29 +453,45 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		if (this.beanFactory instanceof ConfigurableListableBeanFactory) {
 			AutoProxyUtils.exposeTargetClass((ConfigurableListableBeanFactory) this.beanFactory, beanName, beanClass);
 		}
-
+		//创建代理工厂
 		ProxyFactory proxyFactory = new ProxyFactory();
 		proxyFactory.copyFrom(this);
 
+		/**
+		 * isProxyTargetClass()
+		 *
+		 * true
+		 * 1、目标对象实现了接口 – 使用CGLIB代理机制
+		 * 2、目标对象没有接口(只有实现类) – 使用CGLIB代理机制
+		 *
+		 * false
+		 * 1、目标对象实现了接口 – 使用JDK代理机制(代理所有实现了的接口)
+		 * 2、目标对象没有接口(只有实现类) – 使用CGLIB代理机制
+		 *
+		 *默认false
+		 */
 		if (!proxyFactory.isProxyTargetClass()) {
 			if (shouldProxyTargetClass(beanClass, beanName)) {
+				//proxyTargetClass 是否对类进行代理，而不是对接口进行代理，设置为true时，使用CGLib代理。
 				proxyFactory.setProxyTargetClass(true);
 			}
 			else {
 				evaluateProxyInterfaces(beanClass, proxyFactory);
 			}
 		}
-
+		//把advice类型的增强包装成advisor切面
 		Advisor[] advisors = buildAdvisors(beanName, specificInterceptors);
+		//所有的切面
 		proxyFactory.addAdvisors(advisors);
+		//封装的bean实例
 		proxyFactory.setTargetSource(targetSource);
 		customizeProxyFactory(proxyFactory);
-
+		//用来控制代理工厂被配置后，是否还允许修改代理的配置,默认为false
 		proxyFactory.setFrozen(this.freezeProxy);
 		if (advisorsPreFiltered()) {
 			proxyFactory.setPreFiltered(true);
 		}
-
+		//getProxy方法会具体实现是jdk代理还是cglib代理
 		return proxyFactory.getProxy(getProxyClassLoader());
 	}
 

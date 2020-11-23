@@ -1,5 +1,23 @@
+buildscript {
+    repositories {
+        maven {
+            url "https://maven.eveoh.nl/content/repositories/releases"
+        }
+    }
+
+    dependencies {
+        classpath "nl.eveoh:gradle-aspectj:2.0"
+    }
+}
+
 plugins {
     id 'java'
+}
+
+ext.aspectjVersion = '1.8.14'
+apply plugin: 'aspectj'
+compileAspect {
+    additionalAjcArgs = ['encoding': 'UTF-8', 'source': '1.8', 'target': '1.8']
 }
 
 group 'org.springframework'
@@ -14,4 +32,5 @@ repositories {
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     compile(project(":spring-context"))
+    compile 'org.aspectj:aspectjrt:1.8.14'
 }

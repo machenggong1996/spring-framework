@@ -1038,7 +1038,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				// 2.解析beanName对应的Bean实例的类型
 				Class<?> targetType = determineTargetType(beanName, mbd);
 				if (targetType != null) {
-					// 3.实例化前的后置处理器应用（处理InstantiationAwareBeanPostProcessor）
+					// 3.实例化前的后置处理器应用（处理InstantiationAwareBeanPostProcessor）AOP
 					bean = applyBeanPostProcessorsBeforeInstantiation(targetType, beanName);
 					if (bean != null) {
 						// 4.如果返回的bean不为空，会跳过Spring默认的实例化过程，
