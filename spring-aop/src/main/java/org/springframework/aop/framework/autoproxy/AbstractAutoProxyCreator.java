@@ -260,6 +260,12 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		System.out.println("aop#" + beanName);
 		Object cacheKey = getCacheKey(beanClass, beanName);
 		//Aop动态代理
+		/**
+		 * 判断当前bean是否在advisedBeans中（保存了所有需要增强bean）、
+		 * 判断当前bean是否是基础类型的Advice、Pointcut、Advisor、AopInfrastructureBean、
+		 * 判断是否是切面（是否实现了注解@Aspect）、
+		 * 判断是否需要跳过等
+		 */
 		if (!StringUtils.hasLength(beanName) || !this.targetSourcedBeans.contains(beanName)) {
 			if (this.advisedBeans.containsKey(cacheKey)) {
 				return null;
@@ -316,6 +322,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		if (bean != null) {
 			Object cacheKey = getCacheKey(bean.getClass(), beanName);
 			if (this.earlyProxyReferences.remove(cacheKey) != bean) {
+				//AOP代理
 				return wrapIfNecessary(bean, beanName, cacheKey);
 			}
 		}
@@ -368,6 +375,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, null);
 		if (specificInterceptors != DO_NOT_PROXY) {
 			this.advisedBeans.put(cacheKey, Boolean.TRUE);
+			//创建代理
 			Object proxy = createProxy(bean.getClass(), beanName, specificInterceptors,
 			                           new SingletonTargetSource(bean));
 			this.proxyTypes.put(cacheKey, proxy.getClass());

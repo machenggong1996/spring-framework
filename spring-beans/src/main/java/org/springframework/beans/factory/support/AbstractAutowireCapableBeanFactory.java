@@ -403,6 +403,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		Object result = existingBean;
 		for (BeanPostProcessor processor : getBeanPostProcessors()) {
+			//AOP代理在下面
 			Object current = processor.postProcessAfterInitialization(result, beanName);
 			if (current == null) {
 				return result;
@@ -1044,6 +1045,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 					if (bean != null) {
 						// 4.如果返回的bean不为空，会跳过Spring默认的实例化过程，
 						// 所以只能在这里调用BeanPostProcessor实现类的postProcessAfterInitialization方法
+						// AOP代理
 						bean = applyBeanPostProcessorsAfterInitialization(bean, beanName);
 					}
 				}
