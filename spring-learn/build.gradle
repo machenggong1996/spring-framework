@@ -34,5 +34,8 @@ dependencies {
     compile(project(":spring-context"))
     compile(project(":spring-aop"))
     compile(project(":spring-aspects"))
+    compile(project(":spring-webmvc"))
+    //compile(project(":spring-web"))
+    compile("org.apache.tomcat.embed:tomcat-embed-core:8.5.45")
     //compile 'org.aspectj:aspectjrt:1.8.14'
 }

@@ -495,14 +495,22 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * <p>May be overridden in subclasses in order to initialize further strategy objects.
 	 */
 	protected void initStrategies(ApplicationContext context) {
+		//上传文件的bean
 		initMultipartResolver(context);
+		//国际化
 		initLocaleResolver(context);
+		//前端主题样式
 		initThemeResolver(context);
+		//初始化handlerMapping 非常重要
 		initHandlerMappings(context);
+		//HandlerAdapters 非常重要
 		initHandlerAdapters(context);
+		//自定义HandlerException
 		initHandlerExceptionResolvers(context);
 		initRequestToViewNameTranslator(context);
+		//试图转换器
 		initViewResolvers(context);
+		//重定向数据管理器
 		initFlashMapManager(context);
 	}
 
@@ -957,10 +965,12 @@ public class DispatcherServlet extends FrameworkServlet {
 			Exception dispatchException = null;
 
 			try {
+				//检查请求中是否有上传文件操作
 				processedRequest = checkMultipart(request);
 				multipartRequestParsed = (processedRequest != request);
 
 				// Determine handler for the current request.
+				//确定当前请求的处理程序 推断controller的类型 controller有三种类型
 				mappedHandler = getHandler(processedRequest);
 				if (mappedHandler == null) {
 					noHandlerFound(processedRequest, response);
@@ -988,6 +998,7 @@ public class DispatcherServlet extends FrameworkServlet {
 				}
 
 				// Actually invoke the handler.
+				//实际controller执行逻辑
 				mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
 
 				if (asyncManager.isConcurrentHandlingStarted()) {
