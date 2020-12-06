@@ -434,7 +434,7 @@ public class ResourceHttpRequestHandler extends WebContentGenerator
 	@Override
 	public void handleRequest(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-
+		//处理静态资源
 		// For very general mappings (e.g. "/") we need to check 404 first
 		Resource resource = getResource(request);
 		if (resource == null) {
