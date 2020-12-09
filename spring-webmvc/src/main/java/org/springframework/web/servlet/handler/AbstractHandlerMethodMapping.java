@@ -202,7 +202,7 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 		String[] beanNames = (this.detectHandlerMethodsInAncestorContexts ?
 				BeanFactoryUtils.beanNamesForTypeIncludingAncestors(obtainApplicationContext(), Object.class) :
 				obtainApplicationContext().getBeanNamesForType(Object.class));
-
+		//把所有的bean遍历一遍找到handler类型 注册到mappingRegistry
 		for (String beanName : beanNames) {
 			if (!beanName.startsWith(SCOPED_TARGET_NAME_PREFIX)) {
 				Class<?> beanType = null;
@@ -216,14 +216,18 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 					}
 				}
 				if (beanType != null && isHandler(beanType)) {
+					//核心方法
+					//这里就是把每个类下所有符合条件的方法作为HandlerMethod注册，用于匹配时快速查找匹配
 					detectHandlerMethods(beanName);
 				}
 			}
 		}
+		// 其实这个默认是个空实现，如果有自己的业务需要可以定制
 		handlerMethodsInitialized(getHandlerMethods());
 	}
 
 	/**
+	 * 这里就是把每个类下所有符合条件的方法作为HandlerMethod注册，用于匹配时快速查找匹配
 	 * Look for handler methods in the specified handler bean.
 	 * @param handler either a bean name or an actual handler instance
 	 * @see #getMappingForMethod
