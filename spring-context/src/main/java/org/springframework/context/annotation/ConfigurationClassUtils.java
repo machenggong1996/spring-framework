@@ -62,6 +62,7 @@ abstract class ConfigurationClassUtils {
 
 	private static final Set<String> candidateIndicators = new HashSet<>(8);
 
+	// 类加载至JVM时，向集合中添加了四个元素
 	static {
 		candidateIndicators.add(Component.class.getName());
 		candidateIndicators.add(ComponentScan.class.getName());
@@ -110,9 +111,12 @@ abstract class ConfigurationClassUtils {
 		}
 
 		if (isFullConfigurationCandidate(metadata)) {
+			// 含有@Configuration注解，那么对应的BeanDefinition的configurationClass属性值设置为full
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_FULL);
 		}
 		else if (isLiteConfigurationCandidate(metadata)) {
+			// 含有@Bean,@Component,@ComponentScan,@Import,@ImportResource注解
+			// configurationClass属性值设置为lite
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_LITE);
 		}
 		else {
@@ -147,6 +151,7 @@ abstract class ConfigurationClassUtils {
 	 * configuration class, including cross-method call interception
 	 */
 	public static boolean isFullConfigurationCandidate(AnnotationMetadata metadata) {
+		// 含有@Configuration注解
 		return metadata.isAnnotated(Configuration.class.getName());
 	}
 
@@ -160,17 +165,21 @@ abstract class ConfigurationClassUtils {
 	 */
 	public static boolean isLiteConfigurationCandidate(AnnotationMetadata metadata) {
 		// Do not consider an interface or an annotation...
+		// 判断是否含有candidateIndicators这个集合中的注解
 		if (metadata.isInterface()) {
 			return false;
 		}
-
+		// candidateIndicators 是一个静态常量，在初始化时，包含了四个元素
+		// 分别为@Component,@ComponentScan,@Import,@ImportResource这四个注解
+		// 只要这个类上添加了这四种注解中的一个，就便是这个类是一个配置类，
+		// 这个类对应的BeanDefinition中的configurationClass属性值为lite
 		// Any of the typical annotations found?
 		for (String indicator : candidateIndicators) {
 			if (metadata.isAnnotated(indicator)) {
 				return true;
 			}
 		}
-
+		// 查找有没有加了@Bean注解的方法
 		// Finally, let's look for @Bean methods...
 		try {
 			return metadata.hasAnnotatedMethods(Bean.class.getName());
