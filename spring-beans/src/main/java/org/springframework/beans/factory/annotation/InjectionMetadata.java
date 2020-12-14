@@ -176,6 +176,7 @@ public class InjectionMetadata {
 
 			if (this.isField) {
 				Field field = (Field) this.member;
+				// 如果缓存，从缓存中获取
 				ReflectionUtils.makeAccessible(field);
 				field.set(target, getResourceToInject(target, requestingBeanName));
 			}
