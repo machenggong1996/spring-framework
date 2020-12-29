@@ -277,36 +277,41 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 	@Nullable
 	protected Object invokeWithinTransaction(Method method, @Nullable Class<?> targetClass,
 			final InvocationCallback invocation) throws Throwable {
-
+        // 如果transaction attribute为空,该方法就是非事务（非编程式事务）
 		// If the transaction attribute is null, the method is non-transactional.
 		TransactionAttributeSource tas = getTransactionAttributeSource();
 		final TransactionAttribute txAttr = (tas != null ? tas.getTransactionAttribute(method, targetClass) : null);
 		final PlatformTransactionManager tm = determineTransactionManager(txAttr);
 		final String joinpointIdentification = methodIdentification(method, targetClass, txAttr);
-
+        // 标准声明式事务：如果事务属性为空 或者 非回调偏向的事务管理器
 		if (txAttr == null || !(tm instanceof CallbackPreferringPlatformTransactionManager)) {
 			// Standard transaction demarcation with getTransaction and commit/rollback calls.
 			TransactionInfo txInfo = createTransactionIfNecessary(tm, txAttr, joinpointIdentification);
 
 			Object retVal;
 			try {
+				// 这里就是一个环绕增强，在这个proceed前后可以自己定义增强实现
+				// 方法执行
 				// This is an around advice: Invoke the next interceptor in the chain.
 				// This will normally result in a target object being invoked.
 				retVal = invocation.proceedWithInvocation();
 			}
 			catch (Throwable ex) {
 				// target invocation exception
+				// 根据事务定义的，该异常需要回滚就回滚，否则提交事务
 				completeTransactionAfterThrowing(txInfo, ex);
 				throw ex;
 			}
 			finally {
+				//清空当前事务信息，重置为老的
 				cleanupTransactionInfo(txInfo);
 			}
+			//返回结果之前提交事务
 			commitTransactionAfterReturning(txInfo);
 			return retVal;
 		}
-
 		else {
+			// 编程式事务：（回调偏向）
 			Object result;
 			final ThrowableHolder throwableHolder = new ThrowableHolder();
 
@@ -318,26 +323,33 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 						return invocation.proceedWithInvocation();
 					}
 					catch (Throwable ex) {
+						// 如果该异常需要回滚
 						if (txAttr.rollbackOn(ex)) {
+							// 如果是运行时异常返回
 							// A RuntimeException: will lead to a rollback.
 							if (ex instanceof RuntimeException) {
 								throw (RuntimeException) ex;
 							}
 							else {
+								// 如果是其它异常都抛ThrowableHolderException
 								throw new ThrowableHolderException(ex);
 							}
 						}
 						else {
+							// 如果不需要回滚
 							// A normal return value: will lead to a commit.
+							// 定义异常，最终就直接提交事务了
 							throwableHolder.throwable = ex;
 							return null;
 						}
 					}
 					finally {
+						//清空当前事务信息，重置为老的
 						cleanupTransactionInfo(txInfo);
 					}
 				});
 			}
+			// 上抛异常
 			catch (ThrowableHolderException ex) {
 				throw ex.getCause();
 			}
@@ -459,7 +471,7 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 	@SuppressWarnings("serial")
 	protected TransactionInfo createTransactionIfNecessary(@Nullable PlatformTransactionManager tm,
 			@Nullable TransactionAttribute txAttr, final String joinpointIdentification) {
-
+        // 如果还没有定义名字，把连接点的ID定义成事务的名称
 		// If no name specified, apply method identification as transaction name.
 		if (txAttr != null && txAttr.getName() == null) {
 			txAttr = new DelegatingTransactionAttribute(txAttr) {
@@ -496,7 +508,7 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 	protected TransactionInfo prepareTransactionInfo(@Nullable PlatformTransactionManager tm,
 			@Nullable TransactionAttribute txAttr, String joinpointIdentification,
 			@Nullable TransactionStatus status) {
-
+		// 构造一个TransactionInfo事务信息对象，绑定当前线程：ThreadLocal<TransactionInfo>
 		TransactionInfo txInfo = new TransactionInfo(tm, txAttr, joinpointIdentification);
 		if (txAttr != null) {
 			// We need a transaction for this method...
