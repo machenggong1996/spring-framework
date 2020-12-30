@@ -368,7 +368,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		if (Boolean.FALSE.equals(this.advisedBeans.get(cacheKey))) {
 			return bean;
 		}
-		// 判断一遍springAOP基础构建类，标记过false,不需要增强直接返回
+		// 判断一遍springAOP基础构建类，标记过false,不需要增强直接返回 shouldSkip重要逻辑 方法增强在里面
 		if (isInfrastructureClass(bean.getClass()) || shouldSkip(bean.getClass(), beanName)) {
 			this.advisedBeans.put(cacheKey, Boolean.FALSE);
 			return bean;
