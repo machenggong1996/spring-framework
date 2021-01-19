@@ -73,16 +73,19 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	/** Cache of singleton objects: bean name --> bean instance */
 	/**
 	 * 初始化之后的Bean实例存储在这里
+	 * 一级缓存:初始化之后的Bean实例存储在这里 getSingleton(String beanName, ObjectFactory<?> singletonFactory)->addSingleton
 	 */
 	private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>(256);
 
 	/**
 	 * Cache of singleton factories: bean name --> ObjectFactory
+	 * beanFactory bean工厂缓存 三级缓存
 	 */
 	private final Map<String, ObjectFactory<?>> singletonFactories = new HashMap<>(16);
 
 	/**
 	 * Cache of early singleton objects: bean name --> bean instance
+	 * 二级缓存: 发现Bean当前为isSingletonCurrentlyInCreation 将 Bean放入earlySingletonObjects二级缓存并清空一级缓存
 	 */
 	private final Map<String, Object> earlySingletonObjects = new HashMap<>(16);
 
@@ -224,7 +227,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 					// 7.如果存在单例对象工厂，则通过工厂创建一个单例对象
 					if (singletonFactory != null) {
 						singletonObject = singletonFactory.getObject();
-						// 8.将通过单例对象工厂创建的单例对象，放到早期单例对象缓存中
+						// 8.将通过单例对象工厂创建的单例对象，放到早期单例对象缓存中 二级缓存
 						this.earlySingletonObjects.put(beanName, singletonObject);
 						// 9.移除该beanName对应的单例对象工厂，因为该单例工厂已经创建了一个实例对象，并且放到earlySingletonObjects缓存了，
 						// 因此，后续获取beanName的单例对象，可以通过earlySingletonObjects缓存拿到，不需要在用到该单例工厂
